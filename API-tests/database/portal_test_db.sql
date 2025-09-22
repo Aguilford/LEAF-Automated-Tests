@@ -13282,7 +13282,9 @@ INSERT INTO `step_dependencies` (`stepID`, `dependencyID`) VALUES
 (9,	-1),
 (7,	1),
 (1,	9),
-(2,	9);
+(2,	9),
+(10,	-3),
+(10,	-1);
 
 DROP TABLE IF EXISTS `step_modules`;
 CREATE TABLE `step_modules` (
@@ -13294,7 +13296,8 @@ CREATE TABLE `step_modules` (
 
 INSERT INTO `step_modules` (`stepID`, `moduleName`, `moduleConfig`) VALUES
 (1,	'LEAF_workflow_indicator',	'{\"indicatorID\":3}'),
-(2,	'LEAF_workflow_indicator',	'{\"indicatorID\":3}');
+(2,	'LEAF_workflow_indicator',	'{\"indicatorID\":3}'),
+(10,	'LEAF_workflow_indicator',	'{\"indicatorID\":33}');
 
 DROP TABLE IF EXISTS `tags`;
 CREATE TABLE `tags` (
@@ -13465,7 +13468,8 @@ INSERT INTO `workflow_steps` (`workflowID`, `stepID`, `stepTitle`, `stepBgColor`
 (2,	5,	'Followup',	'#fffdcd',	'black',	'1px solid black',	'',	533,	134,	NULL,	NULL,	NULL,	NULL),
 (3,	7,	'Service Chief',	'#fffdcd',	'black',	'1px solid black',	'',	625,	135,	NULL,	NULL,	NULL,	NULL),
 (4,	8,	'Reviewer 1',	'#fffdcd',	'black',	'1px solid black',	'',	526,	147,	14,	NULL,	NULL,	NULL),
-(4,	9,	'Reviewer 2',	'#fffdcd',	'black',	'1px solid black',	'',	530,	242,	15,	NULL,	NULL,	NULL);
+(4,	9,	'Reviewer 2',	'#fffdcd',	'black',	'1px solid black',	'',	530,	242,	15,	NULL,	NULL,	NULL),
+(5,	10,	'Workflow Form Indicators',	'#fffdcd',	'black',	'1px solid black',	'',	470,	138,	49,	52,	NULL,	NULL);
 
 DROP TABLE IF EXISTS `workflows`;
 CREATE TABLE `workflows` (
@@ -13481,5 +13485,6 @@ INSERT INTO `workflows` (`workflowID`, `initialStepID`, `description`) VALUES
 (1,	1,	'General Workflow'),
 (2,	5,	'Test Requestor Followup'),
 (3,	7,	'Service Chief'),
-(4,	8,	'Multiple person designated');
+(4,	8,	'Multiple person designated'),
+(5,	0,	'Workflow-Form Editor Sync');
 
