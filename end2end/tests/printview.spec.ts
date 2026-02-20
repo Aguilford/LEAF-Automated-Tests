@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { LEAF_URLS, getRandomId } from '../leaf_test_utils/leaf_util_methods';
 
 test('workflow form fields load after subsequent getWorkflow() executions', async ({ page }, testInfo) => {
   await page.goto('https://host.docker.internal/Test_Request_Portal/index.php?a=printview&recordID=14');
@@ -60,6 +61,121 @@ test('Change title of request', async ({ page }) => {
   
   
 })
+
+
+test('last action summary and action area display', async ({ page }) => {
+    const testCaseID = '80';
+    const testCaseActionDate = new Date(1771426901 * 1000);
+    const expectedActionText = 'research & develop';
+    const expectedLastActionDisplay = "Tester O'Tester: researched & developed";
+    const expectedLastNoteDisplay = "researched & developed by Tester O'Tester";
+    const expectedLastComment = 'test comment R & D';
+    const expectedCommentDate = testCaseActionDate.toLocaleString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
+    const expectedNoteDate = testCaseActionDate.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+    });
+
+    const lastActionLoc = page.locator('#workflowbox_lastAction');
+    const lastNoteLoc = page.locator('.comment_block').nth(0);
+    const actionBtnLoc = page.locator('#form_dep_container-1').getByRole('button', { name: expectedActionText });
+    const actionIconLoc = actionBtnLoc.locator('img');
+
+    await page.goto(LEAF_URLS.PRINTVIEW_REQUEST + testCaseID);
+
+    await expect(actionBtnLoc).toBeVisible();
+    await expect(actionIconLoc).toBeVisible();
+    const imageLoadedProperly = await actionIconLoc.evaluate(
+        (img:HTMLImageElement) => img.complete && img.naturalHeight !== 0
+    );
+    expect(imageLoadedProperly, 'icon to load properly').toBe(true);
+
+    //workflow request area
+    await expect(lastActionLoc).toBeVisible();
+    await expect(lastActionLoc.getByText(expectedLastActionDisplay),
+        'user name and last action to be visible'
+    ).toBeVisible();
+    await expect(lastActionLoc.getByText(expectedCommentDate),
+        'last comment date to be visible'
+    ).toBeVisible();
+    await expect(
+        lastActionLoc.getByText(expectedLastComment),
+        'last action comment to be visible'
+    ).toBeVisible();
+    //note side panel
+    await expect(lastNoteLoc.getByText(
+        expectedLastNoteDisplay),
+        'last action and user name to be visible in notes panel'
+    ).toBeVisible();
+    await expect(lastNoteLoc.getByText(
+        expectedNoteDate),
+        'last action date to be visible in notes panel'
+    ).toBeVisible();
+    await expect(lastNoteLoc.getByText(
+        expectedLastComment),
+        'last action comment to be visible in notes panel'
+    ).toBeVisible();
+});
+
+test('request take-action with comment - comment visibility', async ({ page }) => {
+    const testCaseID = '81';
+    const testCaseDeps:Array<string> = [ "9", "-1" ];
+    const actionBtnText = 'research & develop';
+    const lastActionLoc = page.locator('#workflowbox_lastAction');
+    const modelLoc = page.locator('.ui-dialog-content:visible');
+    const formFieldLoc = page.locator('.mainlabel').getByText('Single line text');
+
+    await page.goto(LEAF_URLS.PRINTVIEW_REQUEST + testCaseID);
+
+    for (let i = 0; i < testCaseDeps.length; i++) {
+        const depID = testCaseDeps[i];
+        const depBox = page.locator(`#form_dep_container${depID}`);
+        const actionBtn = depBox.getByRole('button', { name: actionBtnText});
+        const depBoxInput = depBox.getByLabel('comment text area');
+        const testInput = '&' + getRandomId();
+
+        await expect(formFieldLoc).toBeVisible(); //impacts button disabled status
+        await expect(depBoxInput).toBeVisible();
+        await depBoxInput.fill(testInput);
+        await expect(depBox.getByRole('button', { name: 'Approve'})).toBeVisible();
+        await expect(actionBtn).toBeVisible();
+
+        const awaitResponse = page.waitForResponse(res =>
+            res.url().includes('/apply') && res.status() === 200
+        );
+        await actionBtn.click();
+        await awaitResponse;
+        //last action summary is present on request
+        await expect(lastActionLoc).toBeVisible();
+        await expect(
+            lastActionLoc.getByText(testInput),
+            'new comment to be visible'
+        ).toBeVisible();
+
+        //last action is added to agenda
+        await page.locator('button', { hasText: 'View History' }).click();
+
+        await expect(modelLoc).toBeVisible();
+        const lastActionRow = modelLoc.locator('table tbody tr').last();
+        await expect(modelLoc.getByText('History of Request ID#: ' + testCaseID)).toBeVisible();
+        await expect(lastActionRow).toBeVisible();
+        await expect(
+            lastActionRow.getByText(`: ${actionBtnText} by Tester Tester`),
+            'action, author to be visible in last row of the request history'
+        ).toBeVisible();
+        await expect(
+            lastActionRow.getByText(`Comment: ${testInput}`),
+            'Comment to be visible in last row of the request history'
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Close', exact: true}).click();
+        await expect(modelLoc).not.toBeVisible();
+    }
+});
 
 
 /* The form and request used for this test are defined in the dev boilerplate. Record and indicator IDs are known and constant.
