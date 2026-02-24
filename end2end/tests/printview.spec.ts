@@ -63,10 +63,9 @@ test('Change title of request', async ({ page }) => {
 })
 
 
-test('last action summary and action area display', async ({ page }) => {
+test('request last action summary. User name, date, comment - display and formatting', async ({ page }) => {
     const testCaseID = '80';
     const testCaseActionDate = new Date(1771426901 * 1000);
-    const expectedActionText = 'research & develop';
     const expectedLastActionDisplay = "Tester O'Tester: researched & developed";
     const expectedLastNoteDisplay = "researched & developed by Tester O'Tester";
     const expectedLastComment = 'test comment R & D';
@@ -83,30 +82,21 @@ test('last action summary and action area display', async ({ page }) => {
 
     const lastActionLoc = page.locator('#workflowbox_lastAction');
     const lastNoteLoc = page.locator('.comment_block').nth(0);
-    const actionBtnLoc = page.locator('#form_dep_container-1').getByRole('button', { name: expectedActionText });
-    const actionIconLoc = actionBtnLoc.locator('img');
 
     await page.goto(LEAF_URLS.PRINTVIEW_REQUEST + testCaseID);
 
-    await expect(actionBtnLoc).toBeVisible();
-    await expect(actionIconLoc).toBeVisible();
-    const imageLoadedProperly = await actionIconLoc.evaluate(
-        (img:HTMLImageElement) => img.complete && img.naturalHeight !== 0
-    );
-    expect(imageLoadedProperly, 'icon to load properly').toBe(true);
-
     //workflow request area
-    await expect(lastActionLoc).toBeVisible();
     await expect(lastActionLoc.getByText(expectedLastActionDisplay),
         'user name and last action to be visible'
     ).toBeVisible();
     await expect(lastActionLoc.getByText(expectedCommentDate),
-        'last comment date to be visible'
+        'last comment date to be visible in the expected format'
     ).toBeVisible();
     await expect(
         lastActionLoc.getByText(expectedLastComment),
         'last action comment to be visible'
     ).toBeVisible();
+
     //note side panel
     await expect(lastNoteLoc.getByText(
         expectedLastNoteDisplay),
@@ -114,7 +104,7 @@ test('last action summary and action area display', async ({ page }) => {
     ).toBeVisible();
     await expect(lastNoteLoc.getByText(
         expectedNoteDate),
-        'last action date to be visible in notes panel'
+        'last action date to be visible in notes panel in the expected format'
     ).toBeVisible();
     await expect(lastNoteLoc.getByText(
         expectedLastComment),
@@ -122,39 +112,65 @@ test('last action summary and action area display', async ({ page }) => {
     ).toBeVisible();
 });
 
-test('request take-action with comment - comment visibility', async ({ page }) => {
+test('request dependency take-action container UI, take action with comment', async ({ page }) => {
     const testCaseID = '81';
     const testCaseDeps:Array<string> = [ "9", "-1" ];
     const actionBtnText = 'research & develop';
+    const testCaseActions:Array<string> = [ 'Approve ', actionBtnText ];
+
     const lastActionLoc = page.locator('#workflowbox_lastAction');
+    const lastNoteLoc = page.locator('.comment_block').nth(0);
     const modelLoc = page.locator('.ui-dialog-content:visible');
-    const formFieldLoc = page.locator('.mainlabel').getByText('Single line text');
 
     await page.goto(LEAF_URLS.PRINTVIEW_REQUEST + testCaseID);
 
     for (let i = 0; i < testCaseDeps.length; i++) {
+        //make sure the test request's form field has loaded before proceding
+        await expect(page.locator('.mainlabel').getByText('Single line text')).toBeVisible();
+
         const depID = testCaseDeps[i];
         const depBox = page.locator(`#form_dep_container${depID}`);
-        const actionBtn = depBox.getByRole('button', { name: actionBtnText});
         const depBoxInput = depBox.getByLabel('comment text area');
         const testInput = '&' + getRandomId();
 
-        await expect(formFieldLoc).toBeVisible(); //impacts button disabled status
+        //comment input section
+        await expect(depBox).toBeVisible();
         await expect(depBoxInput).toBeVisible();
-        await depBoxInput.fill(testInput);
-        await expect(depBox.getByRole('button', { name: 'Approve'})).toBeVisible();
-        await expect(actionBtn).toBeVisible();
 
+        //take-action buttons are visible and icons load
+        for (let j = 0; j < testCaseActions.length; j++) {
+            const actionBtnLoc = depBox.getByRole('button', { name: testCaseActions[j] });
+            await expect(actionBtnLoc).toBeVisible();
+            await expect(actionBtnLoc).toBeEnabled();
+
+            const actionIconLoc = actionBtnLoc.locator('img');
+            await expect(actionIconLoc).toBeVisible();
+            const imageLoadedProperly = await actionIconLoc.evaluate(
+                (img:HTMLImageElement) => img.complete && img.naturalHeight !== 0
+            );
+            expect(imageLoadedProperly, 'icon to load properly').toBe(true);
+        }
+
+        //take action with comment
+        await depBoxInput.fill(testInput);
         const awaitResponse = page.waitForResponse(res =>
             res.url().includes('/apply') && res.status() === 200
         );
-        await actionBtn.click();
+        await depBox.getByRole('button', { name: actionBtnText}).click();
         await awaitResponse;
-        //last action summary is present on request
+
+        //comment is present on request last action summary
         await expect(lastActionLoc).toBeVisible();
         await expect(
             lastActionLoc.getByText(testInput),
             'new comment to be visible'
+        ).toBeVisible();
+
+        //note is present on side panel
+        await expect(lastActionLoc).toBeVisible();
+        await expect(
+            lastNoteLoc.getByText(testInput),
+            'new note to be visible'
         ).toBeVisible();
 
         //last action is added to agenda
