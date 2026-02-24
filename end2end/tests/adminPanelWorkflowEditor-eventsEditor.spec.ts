@@ -795,7 +795,7 @@ test.describe('Email Template customization, recipients, request field formattin
     let awaitResponse = page.waitForResponse(res =>
       res.url().includes('events') && res.status() === 200
     );
-    await page.locator('#jsPlumb_1_50').click();
+    await page.locator('.action--1-submit-1').click();
     await awaitResponse;
 
     awaitResponse = page.waitForResponse(res =>
@@ -845,11 +845,12 @@ test.describe('Email Template customization, recipients, request field formattin
   });
 
   test('An event can be removed from a Workflow Action', async ({ page }) => {
+    const submitActionLoc = page.locator('.action--1-submit-1');
     await loadWorkflow(page, "1");
     let awaitResponse = page.waitForResponse(res =>
       res.url().includes('events') && res.status() === 200
     );
-    await page.locator('#jsPlumb_1_50').click();
+    await submitActionLoc.click();
     await awaitResponse;
 
     const eventsLi = page.locator('#stepInfo_-1 li').filter({ hasText: notifyNextLabel });
@@ -867,7 +868,7 @@ test.describe('Email Template customization, recipients, request field formattin
     awaitResponse = page.waitForResponse(res =>
       res.url().includes('events') && res.status() === 200
     );
-    await page.locator('#jsPlumb_1_50').click();
+    await submitActionLoc.click();
     await awaitResponse;
 
     await expect(
