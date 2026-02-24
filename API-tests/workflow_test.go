@@ -598,7 +598,7 @@ func TestWorkflow_NewAction_CreationAndInputValidation(t *testing.T) {
 
 	postData.Set("actionText", "<script>alert(1)</script>")
 	postData.Set("actionTextPasttense", "<script>alerted(1)</script>")
-	postData.Set("actionIcon", "\"><img src=\"../files/test_file.png\">")//img src=..filestest_file.png
+	postData.Set("actionIcon", "\"><img src=\"../files/test_file.png\">")
 	postData.Set("sort", "e3")
 	postData.Set("fillDependency", "invalid value")
 
